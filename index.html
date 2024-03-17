@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>大狗子</title>
+
+
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    margin: 0;
+    background-color: #f0f0f0;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+  label {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  input[type="datetime-local"],
+  input[type="text"],
+  select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+
+  input[type="datetime-local"]:focus,
+  input[type="text"]:focus,
+  select:focus {
+    outline: none;
+    border-color: #007bff;
+  }
+
+  button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  #records {
+    margin-top: 20px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+  }
+
+  .record {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+
+<body>
+  <h1>柳比歇夫时间记录法</h1>
+
+  <div>
+    <label for="start">开始时间:</label>
+    <input type="datetime-local" id="start" name="start" onchange="updateDuration()">
+  </div>
+
+  <div>
+    <label for="end">结束时间:</label>
+    <input type="datetime-local" id="end" name="end" onchange="updateDuration()">
+  </div>
+
+  <div>
+    <label for="duration_minutes">Minutes:</label>
+    <input type="text" id="duration_minutes" name="duration_minutes" onchange="updateEndTime()">
+  </div>
+
+  <div>
+    <label for="duration_hours">Hours:</label>
+    <input type="text" id="duration_hours" name="duration_hours" readonly>
+  </div>
+
+  <div>
+    <label for="category">类别:</label>
+    <select id="category" name="category">
+      <option value="默认类别">默认类别</option>
+      <option value="工作">工作</option>
+      <option value="学习">学习</option>
+      <option value="休闲">休闲</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="event">事件:</label>
+    <input type="text" id="event" name="event">
+  </div>
+
+  <div>
+    <label for="remark">备注:</label>
+    <input type="text" id="remark" name="remark">
+  </div>
+
+  <button onclick="recordTime()">记录时间</button>
+  <button onclick="confirmClearLocalStorage()">清空记录</button>
+  <button onclick="exportToExcel()">导出为Excel</button>
+
+  <div id="records">
+    <!-- 这里显示记录 -->
+  </div>
+
+  <script>
+    // 设置开始时间和结束时间的默认值为当前时间（中国时区）
+    var now = new Date();
+    now.setHours(now.getHours() + 8); // 调整为中国时区
+    var startField = document.getElementById('start');
+    var endField = document.getElementById('end');
+    var defaultStartTime = now.toISOString().slice(0, 16); // "yyyy-mm-ddThh:mm"
+    var defaultEndTime = now.toISOString().slice(0, 16);
+
+    startField.value = defaultStartTime;
+    endField.value = defaultEndTime;
+
+    // 定义类别变量
+    var categorySelect = document.getElementById('category');
+    var category = categorySelect.value;
+
+    function recordTime() {
+      var startTime = document.getElementById('start').value;
+      var endTime = document.getElementById('end').value;
+      var category = categorySelect.value; // 更新类别变量
+      var event = document.getElementById('event').value;
+
+      // 检查开始时间、结束时间、类别和事件字段是否为空
+      if (!startTime.trim() || !endTime.trim() || !category.trim() || !event.trim()) {
+        alert("开始时间、结束时间、类别和事件字段不能为空！");
+        return;
+      }
+
+
+
+      var remark = document.getElementById('remark').value;
+
+
+      var record = {
+        startTime: startTime,
+        endTime: endTime,
+        category: category,
+        event: event,
+        remark: remark
+      };
+
+      var records = JSON.parse(localStorage.getItem('records')) || [];
+      records.push(record);
+      localStorage.setItem('records', JSON.stringify(records));
+
+      displayRecords();
+    }
+
+    function displayRecords() {
+      var records = JSON.parse(localStorage.getItem('records')) || [];
+      var recordsDiv = document.getElementById('records');
+      recordsDiv.innerHTML = '';
+
+      records.forEach(function (record) {
+        var recordString = JSON.stringify(record);
+        var recordNode = document.createElement('div');
+        recordNode.textContent = recordString;
+        recordsDiv.appendChild(recordNode);
+      });
+    }
+
+    function exportToExcel() {
+      var records = JSON.parse(localStorage.getItem('records')) || [];
+      var csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Start Time,End Time,Duration (Minutes),Duration (Hours),Category,Event,Remark\n";
+
+      records.forEach(function (record) {
+        var startTime = new Date(record.startTime);
+        var endTime = new Date(record.endTime);
+        var durationMinutes = (endTime - startTime) / (1000 * 60);
+        var durationHours = durationMinutes / 60;
+        csvContent += record.startTime + ',' + record.endTime + ',' + durationMinutes + ',' + durationHours + ',' + record.category + ',' + record.event + ',' + record.remark + '\n';
+      });
+
+      var encodedUri = encodeURI(csvContent);
+      var link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "time_records.csv");
+      document.body.appendChild(link);
+      link.click();
+    }
+
+    function confirmClearLocalStorage() {
+      var confirmClear = confirm("确定要清空所有记录吗？");
+      if (confirmClear) {
+        clearLocalStorage();
+      }
+    }
+
+    function clearLocalStorage() {
+      localStorage.removeItem('records');
+      displayRecords();
+    }
+
+    function updateDuration() {
+      var startTime = new Date(document.getElementById('start').value);
+      var endTime = new Date(document.getElementById('end').value);
+      var duration = endTime - startTime;
+      document.getElementById('duration_minutes').value = (duration / (60 * 1000));
+      document.getElementById('duration_hours').value = (duration / (60 * 60 * 1000)).toFixed(2);
+    }
+
+
+    function updateEndTime() {
+      var startTime = new Date(document.getElementById('start').value);
+      var durationMinutes = parseFloat(document.getElementById('duration_minutes').value);
+      var endTime = new Date(startTime.getTime() + (durationMinutes * 60 * 1000));
+      document.getElementById('end').value = endTime.toISOString().slice(0, 16);
+    }
+
+    displayRecords();
+  </script>
+</body>
+
+</html>
