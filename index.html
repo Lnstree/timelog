@@ -132,7 +132,12 @@
     var defaultStartTime = now.toISOString().slice(0, 16); // "yyyy-mm-ddThh:mm"
     var defaultEndTime = now.toISOString().slice(0, 16);
 
-    startField.value = defaultStartTime;
+    // 从localStorage中获取上一个事件的结束时间（如果存在）
+    var records = JSON.parse(localStorage.getItem('records')) || [];
+    var lastRecordEndTime = records.length > 0 ? records[records.length - 1].endTime : defaultStartTime;
+
+
+    startField.value = lastRecordEndTime;
     endField.value = defaultEndTime;
 
     // 定义类别变量
@@ -151,6 +156,9 @@
         alert("开始时间、结束时间、类别和事件字段不能为空！");
         return;
       }
+
+      startTime = startTime.replace("T", " ");
+      endTime   = endTime.replace("T", " ");
 
 
       var remark = document.getElementById('remark').value;
