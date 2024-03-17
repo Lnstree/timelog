@@ -144,6 +144,8 @@
     var categorySelect = document.getElementById('category');
     var category = categorySelect.value;
 
+    
+
     function recordTime() {
       var startTime = document.getElementById('start').value;
       var endTime = document.getElementById('end').value;
@@ -174,7 +176,7 @@
       var records = JSON.parse(localStorage.getItem('records')) || [];
       records.push(record);
       localStorage.setItem('records', JSON.stringify(records));
-
+      
       displayRecords();
     }
 
@@ -256,6 +258,9 @@
       }
       updateDuration();
     }
+
+
+    updateDuration();
     displayRecords();
   </script>
 </body>
