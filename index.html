@@ -8,68 +8,68 @@
 
 
   <style>
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    margin: 0;
-    background-color: #f0f0f0;
-  }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
 
-  h1 {
-    margin-bottom: 20px;
-    color: #333;
-  }
+    h1 {
+      margin-bottom: 20px;
+      color: #333;
+    }
 
-  label {
-    font-weight: bold;
-    margin-bottom: 5px;
-  }
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
 
-  input[type="datetime-local"],
-  input[type="text"],
-  select {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-  }
+    input[type="datetime-local"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
 
-  input[type="datetime-local"]:focus,
-  input[type="text"]:focus,
-  select:focus {
-    outline: none;
-    border-color: #007bff;
-  }
+    input[type="datetime-local"]:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #007bff;
+    }
 
-  button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
 
-  button:hover {
-    background-color: #0056b3;
-  }
+    button:hover {
+      background-color: #0056b3;
+    }
 
-  #records {
-    margin-top: 20px;
-    border-top: 1px solid #ccc;
-    padding-top: 20px;
-  }
+    #records {
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 20px;
+    }
 
-  .record {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 10px;
-    margin-bottom: 10px;
-  }
-</style>
+    .record {
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 
 <body>
@@ -144,6 +144,7 @@
       var endTime = document.getElementById('end').value;
       var category = categorySelect.value; // 更新类别变量
       var event = document.getElementById('event').value;
+      var hours = document.getElementById('duration_hours').value;
 
       // 检查开始时间、结束时间、类别和事件字段是否为空
       if (!startTime.trim() || !endTime.trim() || !category.trim() || !event.trim()) {
@@ -152,16 +153,14 @@
       }
 
 
-
       var remark = document.getElementById('remark').value;
-
-
       var record = {
         startTime: startTime,
         endTime: endTime,
         category: category,
         event: event,
-        remark: remark
+        hours: hours,
+        remark: remark,
       };
 
       var records = JSON.parse(localStorage.getItem('records')) || [];
@@ -225,14 +224,30 @@
       document.getElementById('duration_hours').value = (duration / (60 * 60 * 1000)).toFixed(2);
     }
 
-
     function updateEndTime() {
       var startTime = new Date(document.getElementById('start').value);
+      var endTime = new Date(document.getElementById('end').value);
       var durationMinutes = parseFloat(document.getElementById('duration_minutes').value);
-      var endTime = new Date(startTime.getTime() + (durationMinutes * 60 * 1000));
-      document.getElementById('end').value = endTime.toISOString().slice(0, 16);
-    }
 
+      if (durationMinutes > 0) {
+        // 计算结束时间
+        var endTime = new Date(startTime.getTime() + (durationMinutes * 60 * 1000));
+        endTime.setHours(endTime.getHours() + 8); // 调整为中国时区
+        // 将结束时间转换为 ISO 字符串，保留日期和时间部分
+        var endTimeISO = endTime.toISOString().slice(0, 16);
+        // 将结束时间显示在相应的输入框中
+        document.getElementById('end').value = endTimeISO;
+      } else {
+        // 计算结束时间
+        var endTime = new Date(endTime.getTime() + (durationMinutes * 60 * 1000));
+        endTime.setHours(endTime.getHours() + 8); // 调整为中国时区
+        // 将结束时间转换为 ISO 字符串，保留日期和时间部分
+        var startTimeISO = endTime.toISOString().slice(0, 16);
+        // 将结束时间显示在相应的输入框中
+        document.getElementById('start').value = startTimeISO;
+      }
+      updateDuration();
+    }
     displayRecords();
   </script>
 </body>
