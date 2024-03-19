@@ -73,7 +73,7 @@
 </head>
 
 <body>
-  <h1>大狗子</h1>
+  <h1>大狗子的一天</h1>
 
   <div>
     <label for="start">开始时间:</label>
@@ -98,7 +98,7 @@
   <div>
     <label for="category">类别:</label>
     <select id="category" name="category">
-      <option value="默认类别">默认类别</option>
+      <option value="生活">生活</option>
       <option value="工作">工作</option>
       <option value="学习">学习</option>
       <option value="休闲">休闲</option>
@@ -144,7 +144,6 @@
     var categorySelect = document.getElementById('category');
     var category = categorySelect.value;
 
-    
 
     function recordTime() {
       var startTime = document.getElementById('start').value;
