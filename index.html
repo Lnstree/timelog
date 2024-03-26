@@ -206,10 +206,15 @@
         csvContent += record.startTime + ',' + record.endTime + ',' + durationMinutes + ',' + durationHours + ',' + record.category + ',' + record.event + ',' + record.remark + '\n';
       });
 
+      var currentDate = new Date();
+      var dateString = currentDate.toISOString().slice(0, 10); // 获取格式为 YYYY-MM-DD 的日期字符串
+      var fileName = "time_records_" + dateString + ".csv";
+
+
       var encodedUri = encodeURI(csvContent);
       var link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "time_records.csv");
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
     }
