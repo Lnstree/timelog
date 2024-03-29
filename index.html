@@ -118,7 +118,8 @@
 
   <button onclick="recordTime()">记录时间</button>
   <button onclick="confirmClearLocalStorage()">清空记录</button>
-  <button onclick="exportToExcel()">导出为Excel</button>
+  <button onclick="exportToExcel()">Excel</button>
+  <button onclick="exportToLocal()">Local</button>
 
   <div id="records">
     <!-- 这里显示记录 -->
@@ -160,7 +161,7 @@
       }
 
       startTime = startTime.replace("T", " ");
-      endTime   = endTime.replace("T", " ");
+      endTime = endTime.replace("T", " ");
 
 
       var remark = document.getElementById('remark').value;
@@ -176,7 +177,7 @@
       var records = JSON.parse(localStorage.getItem('records')) || [];
       records.push(record);
       localStorage.setItem('records', JSON.stringify(records));
-      
+
       displayRecords();
     }
 
@@ -192,6 +193,44 @@
         recordsDiv.appendChild(recordNode);
       });
     }
+    function exportToLocal() {
+
+      var records = JSON.parse(localStorage.getItem('records')) || [];
+      var csvContent = "data:text/csv;charset=utf-8,";
+      csvContent += "Start Time,End Time,Duration (Minutes),Duration (Hours),Category,Event,Remark\n";
+      var post_records = [];
+      records.forEach(function (record) {
+        var startTime = new Date(record.startTime);
+        var endTime = new Date(record.endTime);
+        var durationMinutes = (endTime - startTime) / (1000 * 60);
+        var durationHours = durationMinutes / 60;
+
+        post_records.push({
+          startTime: record.startTime,
+          endTime: record.endTime,
+          durationMinutes: durationHours,
+          durationHours: durationHours,
+          category: record.category,
+          event: record.event,
+          remark: record.remark
+        })
+      });
+
+      // lazy
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'http://192.168.4.111/daily', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          if (xhr.status === 200) {
+            alert("ok")
+          } else {
+          }
+        }
+      };
+      // console.log(post_records)
+      xhr.send(JSON.stringify(post_records));
+    }
 
     function exportToExcel() {
       var records = JSON.parse(localStorage.getItem('records')) || [];
@@ -204,6 +243,7 @@
         var durationMinutes = (endTime - startTime) / (1000 * 60);
         var durationHours = durationMinutes / 60;
         csvContent += record.startTime + ',' + record.endTime + ',' + durationMinutes + ',' + durationHours + ',' + record.category + ',' + record.event + ',' + record.remark + '\n';
+
       });
 
       var currentDate = new Date();
