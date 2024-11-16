@@ -1,0 +1,429 @@
+<html lang="zh">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>进阶版平板支撑训练助手</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+                padding: 20px;
+            }
+
+            .container {
+                width: 100%;
+                max-width: 500px;
+                background: white;
+                padding: 20px;
+                border-radius: 15px;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            }
+
+            .timer {
+                font-size: 4em;
+                text-align: center;
+                margin: 20px 0;
+                font-weight: bold;
+                color: #2c3e50;
+            }
+
+            .progress-container {
+                margin: 20px 0;
+                background: #f0f0f0;
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            .progress-bar {
+                height: 20px;
+                background: linear-gradient(90deg, #2ecc71, #27ae60);
+                transition: width 0.3s ease;
+            }
+
+            .plan-info {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                margin: 10px 0;
+            }
+
+            .plan-detail {
+                display: flex;
+                justify-content: space-between;
+                margin: 5px 0;
+                padding: 5px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .current-group {
+                background: #e8f6f3;
+                padding: 10px;
+                border-radius: 8px;
+                margin: 10px 0;
+                text-align: center;
+                font-size: 1.2em;
+                color: #16a085;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 15px;
+                margin: 10px 0;
+                border: none;
+                border-radius: 8px;
+                font-size: 1.2em;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .btn-start {
+                background: #2ecc71;
+                color: white;
+            }
+
+            .btn-start:hover {
+                background: #27ae60;
+            }
+
+            .btn-stop {
+                background: #e74c3c;
+                color: white;
+            }
+
+            .btn-stop:hover {
+                background: #c0392b;
+            }
+
+            .stats {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+            }
+
+            .history {
+                margin-top: 20px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .motivational-text {
+                text-align: center;
+                margin: 15px 0;
+                color: #2c3e50;
+                font-style: italic;
+            }
+
+            .achievement {
+                padding: 10px;
+                margin: 10px 0;
+                background: #fff3cd;
+                border-radius: 8px;
+                text-align: center;
+                color: #856404;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="plan-info" id="planInfo">
+                <h3>今日训练计划</h3>
+                <div id="groupsList"></div>
+            </div>
+
+            <div class="current-group">
+                第 <span id="currentGroup">1</span> 组 /
+                <span id="totalGroups">0</span> 组
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="timer" id="timer">00:00</div>
+            <div class="motivational-text" id="motivationalText">
+                准备开始训练!
+            </div>
+
+            <button class="btn btn-start" id="startBtn">开始</button>
+            <button class="btn btn-stop" id="stopBtn" style="display: none">
+                结束
+            </button>
+
+            <div class="stats">
+                <h3>训练统计</h3>
+                <div id="statsContent"></div>
+            </div>
+
+            <div class="history">
+                <h3>训练记录</h3>
+                <div id="recordList"></div>
+            </div>
+        </div>
+
+        <script>
+            class PlankTraining {
+                constructor() {
+                    this.timer = null;
+                    this.currentTime = 0;
+                    this.isRunning = false;
+                    this.currentGroup = 1;
+                    this.records =
+                        JSON.parse(localStorage.getItem("plankRecords")) || [];
+                    this.todayPlan = this.generatePlan();
+
+                    this.initializeElements();
+                    this.initializeEvents();
+                    this.loadRecords();
+                    this.displayPlan();
+                    this.updateStats();
+                }
+
+                initializeElements() {
+                    this.elements = {
+                        timer: document.getElementById("timer"),
+                        startBtn: document.getElementById("startBtn"),
+                        stopBtn: document.getElementById("stopBtn"),
+                        recordList: document.getElementById("recordList"),
+                        currentGroup: document.getElementById("currentGroup"),
+                        totalGroups: document.getElementById("totalGroups"),
+                        motivationalText:
+                            document.getElementById("motivationalText"),
+                        progressBar: document.getElementById("progressBar"),
+                        groupsList: document.getElementById("groupsList"),
+                        statsContent: document.getElementById("statsContent"),
+                    };
+                }
+
+                generatePlan() {
+                    const lastRecord = this.records[0];
+                    let baseTime = 30; // 默认起始时间
+                    let baseGroups = 3; // 默认组数
+
+                    if (lastRecord) {
+                        baseTime = lastRecord.duration;
+                        baseGroups = lastRecord.totalGroups || 3;
+                    }
+
+                    // 使用自然底数e来计算组数增长
+                    const growthFactor = Math.min(Math.log(baseGroups + 1), 2);
+                    const totalGroups = Math.min(
+                        Math.floor(baseGroups * growthFactor),
+                        8,
+                    );
+
+                    // 生成每组的训练时间
+                    const plan = [];
+                    for (let i = 0; i < totalGroups; i++) {
+                        const timeIncrease = Math.floor(
+                            baseTime * (1 + 0.1 * Math.log(i + 1)),
+                        );
+                        plan.push({
+                            group: i + 1,
+                            targetTime: timeIncrease,
+                            completed: false,
+                        });
+                    }
+
+                    return plan;
+                }
+
+                displayPlan() {
+                    this.elements.totalGroups.textContent =
+                        this.todayPlan.length;
+                    this.elements.groupsList.innerHTML = this.todayPlan
+                        .map(
+                            (group) => `
+                    <div class="plan-detail">
+                        <span>第${group.group}组</span>
+                        <span>${group.targetTime}秒</span>
+                        <span>${group.completed ? "✅" : "⏳"}</span>
+                    </div>
+                `,
+                        )
+                        .join("");
+                }
+
+                updateProgress() {
+                    const completedGroups = this.todayPlan.filter(
+                        (g) => g.completed,
+                    ).length;
+                    const progress =
+                        (completedGroups / this.todayPlan.length) * 100;
+                    this.elements.progressBar.style.width = `${progress}%`;
+                }
+
+                startTimer() {
+                    if (!this.isRunning) {
+                        this.isRunning = true;
+                        this.elements.startBtn.style.display = "none";
+                        this.elements.stopBtn.style.display = "block";
+
+                        this.timer = setInterval(() => {
+                            this.currentTime++;
+                            this.updateTimerDisplay();
+                            this.updateMotivationalText();
+                        }, 1000);
+                    }
+                }
+
+                stopTimer() {
+                    if (this.isRunning) {
+                        clearInterval(this.timer);
+                        this.isRunning = false;
+                        this.saveRecord();
+                        this.todayPlan[this.currentGroup - 1].completed = true;
+                        this.currentTime = 0;
+                        this.updateTimerDisplay();
+                        this.elements.startBtn.style.display = "block";
+                        this.elements.stopBtn.style.display = "none";
+
+                        if (this.currentGroup < this.todayPlan.length) {
+                            this.currentGroup++;
+                            this.elements.currentGroup.textContent =
+                                this.currentGroup;
+                        } else {
+                            this.completePlan();
+                        }
+
+                        this.displayPlan();
+                        this.updateProgress();
+                    }
+                }
+
+                completePlan() {
+                    const achievement = document.createElement("div");
+                    achievement.className = "achievement";
+                    achievement.textContent = "🎉 恭喜完成今天的训练计划！";
+                    this.elements.startBtn.parentNode.insertBefore(
+                        achievement,
+                        this.elements.startBtn,
+                    );
+                    this.elements.startBtn.disabled = true;
+                }
+
+                updateTimerDisplay() {
+                    const minutes = Math.floor(this.currentTime / 60);
+                    const seconds = this.currentTime % 60;
+                    this.elements.timer.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+                }
+
+                updateMotivationalText() {
+                    const currentTarget =
+                        this.todayPlan[this.currentGroup - 1].targetTime;
+                    const remaining = currentTarget - this.currentTime;
+
+                    if (remaining <= 0) {
+                        this.elements.motivationalText.textContent =
+                            "可以结束了！做得很棒！";
+                        return;
+                    }
+
+                    const texts = [
+                        "坚持住！你可以的！",
+                        "保持姿势，感受核心力量！",
+                        `还剩 ${remaining} 秒，继续加油！`,
+                        "呼吸均匀，保持专注！",
+                        "你已经完成一半了！",
+                    ];
+
+                    this.elements.motivationalText.textContent =
+                        texts[Math.floor(this.currentTime / 10) % texts.length];
+                }
+
+                saveRecord() {
+                    const record = {
+                        date: new Date().toLocaleString(),
+                        duration: this.currentTime,
+                        group: this.currentGroup,
+                        totalGroups: this.todayPlan.length,
+                        targetTime:
+                            this.todayPlan[this.currentGroup - 1].targetTime,
+                    };
+
+                    this.records.unshift(record);
+                    if (this.records.length > 10) {
+                        this.records.pop();
+                    }
+
+                    localStorage.setItem(
+                        "plankRecords",
+                        JSON.stringify(this.records),
+                    );
+                    this.loadRecords();
+                    this.updateStats();
+                }
+
+                loadRecords() {
+                    this.elements.recordList.innerHTML = this.records
+                        .map(
+                            (record) => `
+                    <div class="plan-detail">
+                        <span>${record.date}</span>
+                        <span>第${record.group}组/${record.totalGroups}组</span>
+                        <span>${record.duration}秒</span>
+                    </div>
+                `,
+                        )
+                        .join("");
+                }
+
+                updateStats() {
+                    if (this.records.length === 0) {
+                        this.elements.statsContent.innerHTML =
+                            "<p>暂无训练数据</p>";
+                        return;
+                    }
+
+                    const totalTime = this.records.reduce(
+                        (sum, r) => sum + r.duration,
+                        0,
+                    );
+                    const avgTime = Math.floor(totalTime / this.records.length);
+                    const maxTime = Math.max(
+                        ...this.records.map((r) => r.duration),
+                    );
+
+                    this.elements.statsContent.innerHTML = `
+                    <div class="plan-detail">
+                        <span>平均时长</span>
+                        <span>${avgTime}秒</span>
+                    </div>
+                    <div class="plan-detail">
+                        <span>最佳记录</span>
+                        <span>${maxTime}秒</span>
+                    </div>
+                    <div class="plan-detail">
+                        <span>总训练次数</span>
+                        <span>${this.records.length}次</span>
+                    </div>
+                `;
+                }
+
+                initializeEvents() {
+                    this.elements.startBtn.addEventListener("click", () =>
+                        this.startTimer(),
+                    );
+                    this.elements.stopBtn.addEventListener("click", () =>
+                        this.stopTimer(),
+                    );
+                }
+            }
+
+            // 初始化应用
+            window.onload = () => {
+                new PlankTraining();
+            };
+        </script>
+    </body>
+</html>
